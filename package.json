@@ -1,0 +1,25 @@
+{
+  "name": "comet-platform",
+  "version": "0.0.1",
+  "description": "A development platform for building awesome JavaScript apps",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/samvv/comet.git"
+  },
+  "keywords": [
+    "comet",
+    "platform",
+    "development",
+    "tools"
+  ],
+  "author": "Sam Vervaeck",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "bugs": {
+    "url": "https://github.com/samvv/comet/issues"
+  },
+  "homepage": "https://github.com/samvv/comet#readme"
+}
