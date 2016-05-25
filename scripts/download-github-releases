@@ -1,0 +1,95 @@
+#!/usr/bin/env NODE
+
+'use strict';
+
+const numParallelDownloads = 2
+
+const fs = require('fs-extra')
+const winston = require('winston');
+const cheerio = require('cheerio')
+const request = require('request')
+const path = require('path')
+const progress = require('request-progress')
+const minimist = require('minimist')
+const yauzl = require('yauzl')
+
+const argv = minimist(process.argv.slice(2))
+
+const cacheDir = __dirname
+
+
+function requestLogged(url, cb) {
+  winston.info(`Requesting ${url} ...`)
+  return request(url, (error, response, body) => {
+    if (error)
+      winston.warn(`Error: ${error}`)
+    else if (cb)
+      cb(body)
+  })
+}
+
+function download(url) {
+  winston.info(`Started download of ${url} ...`)
+  return request({ url: url, encoding: null })
+}
+
+function unzip(file, dir) {
+  fs.mkdirpSync(dir)
+  return new Promise((accept, reject) => {
+    require('child_process').exec(`unzip ${file} -d ${dir}`, (err) => {
+      if (err)
+        reject()
+      else
+        accept()
+    })
+  })
+}
+
+function downloadGitHubReleases(repo) {
+
+  let name = repo.split('/')[1]
+
+  function downloadAndExtract(release) {
+    let targetPath = path.join(cacheDir, name, release.version)
+    console.log(targetPath)
+    request(release.url)
+      .pipe(fs.createWriteStream(targetPath+'.zip'))
+      .on('error', () => {
+        winston.error(`Could not get ${release.url}.`)
+      })
+      .on('close', () => {
+        unzip(targetPath+'.zip', targetPath).then(() => {
+          fs.remove(targetPath+'.zip')
+        })
+      })
+  }
+
+  function downloadAllReleasesFromPage(url) {
+    requestLogged(url, (body) => {
+      let page = cheerio(body)
+      let extractDir = fs.mkdirp(path.join(cacheDir, name))
+      let urls = []
+      page.find('div.release').each((index, release) => {
+        release = cheerio(release)
+        downloadAndExtract({
+          version: release.find('ul.tag-references').eq(0).find('span.css-truncate-target').text(),
+          url: 'http://github.com'+release.find('ul.release-downloads').children().eq(0).children('a').attr('href')
+        })
+      })
+      let next = page.find('div.pagination').find('a').filter((index, link) => cheerio(link).text() == 'Next')
+      console.log(next.length)
+      if (next.length > 0)
+        downloadAllReleasesFromPage(next.attr('href'))
+    })
+  }
+
+  downloadAllReleasesFromPage('https://github.com/'+repo+'/releases')
+}
+
+let repo = argv._[0]
+
+if (!repo)
+  throw new Error('must specify a GitHub repository')
+
+downloadGitHubReleases(repo)
+
