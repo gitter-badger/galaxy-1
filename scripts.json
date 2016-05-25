@@ -31,5 +31,220 @@
       "versions": ["1.12.0-rc.2", "1.12.0-rc.1", "1.12.0-beta.1", "1.11.4", "1.11.3", "1.11.2", "1.11.1", "1.11.0", "1.11.0-beta.2", "1.11.0-beta.1", "1.10.4", "1.10.3", "1.10.2", "1.10.1", "1.10.0", "1.10.0-rc.1", "1.10.0-beta.1", "1.9.2", "1.9.1", "1.9.0", "1.9.0-rc.1", "1.9.0-beta.1", "1.8.24", "1.8.23", "1.8.22", "1.8.21", "1.8.20", "1.8.19", "1.8.18", "1.8.17", "1.8.16", "1.8.15", "1.8.14", "1.8.13", "1.8.12", "1.8.11", "1.8.10", "1.8.9", "1.8.8", "1.8.7", "1.8.6", "1.8.5", "1.8.4", "1.8.3", "1.8.2", "1.8.1", "1.8.0", "1.7.3", "1.7.2", "1.7.1", "1.7.0"]
     }]
   }]
+}, {
+  "name": "jquery-ui-black-ti",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-blitze",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-cupertin",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-dark-hiv",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-dot-lu",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-eggplan",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-excite-bik",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-flic",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-hot-sneak",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-humanit",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-le-fro",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-mint-cho",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-overcas",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-pepper-grinde",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-redmon",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-smoothnes",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-south-stree",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-star",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-sunn",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-swanky-purs",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-trontasti",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-ui-darknes",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-ui-lightnes",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
+}, {
+  "name": "jquery-ui-vade",
+  "source": [{
+    "name": "maxcdn",
+    "base": "https://code.jquery.com/ui/${version}/themes/",
+    "files": [{
+      "name": "jquery-ui.css",
+      "versions": []
+    }]
 }]
-
