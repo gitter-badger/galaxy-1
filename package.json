@@ -21,5 +21,19 @@
   "bugs": {
     "url": "https://github.com/samvv/comet/issues"
   },
-  "homepage": "https://github.com/samvv/comet#readme"
+  "homepage": "https://github.com/samvv/comet#readme",
+  "dependencies": {
+    "chokidar": "^1.5.1",
+    "express": "^4.13.4",
+    "fs-extra": "^0.30.0",
+    "handlebars": "^4.0.5",
+    "parent-search": "^1.3.3",
+    "source-map-support": "^0.4.0",
+    "winston": "^2.2.0"
+  },
+  "devDependencies": {
+    "cheerio": "^0.20.0",
+    "request-progress": "^2.0.1",
+    "unzip": "^0.1.11"
+  }
 }
