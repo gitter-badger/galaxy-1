@@ -1,0 +1,42 @@
+#!/usr/bin/env NODE
+
+'use strict';
+
+require('source-map-support').install()
+
+let CometPlatform = require('../lib/CometPlatform').default,
+    path = require('path'),
+    fs = require('fs-extra')
+
+let argv = require('minimist')(process.argv.splice(2))
+let commandName = argv._[0], args = argv._.splice(1)
+let workingDir = argv['working-dir'] ? path.resolve(process.cwd(), argv['working-dir']) : process.cwd()
+let cometDir = argv['comet-dir'] ? path.resolve(workingDir, argv['comet-dir']) : require('parent-search')(workingDir, '.comet')
+let sourcesDir = argv['sources-dir'] ? path.resolve(workingDir, argv['sources-dir']) : path.dirname(cometDir)
+
+function hasComet() {
+  return cometDir != null && fs.existsSync(cometDir)
+}
+
+if (!commandName)
+  commandName = hasComet() ? "develop" : "create"
+
+function createProject() {
+  let fs = require('fs-extra')
+  cometDir = cometDir || path.resolve(workingDir, '.comet')
+  fs.mkdirp(cometDir)
+}
+
+function runServices() {
+  let platform = new CometPlatform(sourcesDir)
+  platform.runServer()
+}
+
+switch(commandName) {
+case "create":
+  createProject()
+  break;
+case "develop":
+  runServices()
+  break;
+}
