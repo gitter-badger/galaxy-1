@@ -1,134 +1,38 @@
 
 /// <reference path="../typings/main.d.ts" />
 
-import * as express from "express"
+import * as fs from "fs"
 import * as path from "path"
 import { EventEmitter } from "events"
-import * as chokidar from 'chokidar'
+import * as express from "express"
+import * as createDebug from "debug"
+import * as http from "http"
+
+import ScriptContainer from "./ScriptContainer"
 import { ScriptVersion } from "./ScriptRegistry"
-import maiScriptRegistry from "./MainScriptRegistry"
+import { mainScriptRegistry } from "./MainScriptRegistry"
 import { Compiler } from "./Compiler"
 import HandlebarsCompiler from "./HandlebarsCompiler"
-import * as createDebug from "debug"
+import ViewContainer from "./ViewContainer"
 
-let debug = createDebug('comet')
+const debug = createDebug('comet')
 
-function pureFileName(filePath: string) {
-  return path.basename(filePath, path.extname(filePath))
-}
-
-export class ScriptContainer {
-
-  installedScripts: { [name: string]: ScriptVersion }
-
-  getTags(scriptName: string) {
-    installedScripts[scriptName]
-  }
-
-  load(filePath: string, registry?: ScriptRegistry ) {
-    registry = registry || mainScriptRegistry)
-    let scripts = require(filePath)
-  }
-}
-
-export class ViewContainer extends EventEmitter {
-
-  scripts: ScriptContainer 
-
-  compiledViews: { [name: string]: (context: any) => string } = {}
-  viewCompiler: HandlebarsCompiler = new HandlebarsCompiler()
-
-  partialsReady = false
-  viewsReady = false
-
-  constructor(scripts: ScriptsContainer, partialsDir: string, viewsDir: string) {
-    super()
-
-    let $this = this
-
-    function tryEmitReady() {
-      if ($this.partialsReady && $this.viewsReady)
-        $this.emit('ready')
+function guardedEmitter(emitter, event) {
+  let readyCount = 0,
+      listenerCount = 0
+  return () => {
+    ++listenerCount;
+    return () => {
+      ++readyCount
+      if (readyCount == listenerCount)
+        emitter.emit(event)
     }
-
-    chokidar.watch(viewsDir)
-      .on('all', (event, filePath) => {
-        let viewPath = path.join(path.dirname(path.relative(viewsDir, filePath)), pureFileName(filePath))
-        switch(event) {
-        case 'add':
-          debug(`adding view '${viewPath}'`)
-          $this.compiledViews[viewPath] = this.viewCompiler.compile(filePath)
-          break
-        case 'change':
-          debug(`updating view '${viewPath}'`)
-          $this.compiledViews[viewPath] = this.viewCompiler.compile(filePath)
-          break
-        case 'unlink':
-          debug(`removing view '${viewPath}'`)
-          delete $this.compiledViews[viewPath]
-        }
-      })
-      .on('ready', () => {
-        $this.viewsReady = true
-        tryEmitReady()
-      })
-
-    chokidar.watch(partialsDir)
-      .on('all', (event, filePath) => {
-        let partialPath = path.join(path.dirname(path.relative(partialsDir, filePath)), pureFileName(filePath))
-        switch(event) {
-        case 'add':
-          debug(`adding new partial '${partialPath}'`)
-          this.viewCompiler.addPartial(partialPath, filePath)
-          break
-        case 'change':
-          debug(`updating partial '${partialPath}'`)
-          this.viewCompiler.updatePartial(partialPath, filePath)
-          break
-        case 'unlink':
-          debug(`removing partial '${partialPath}'`)
-          this.viewCompiler.removePartial(partialPath)
-          break
-        }
-      })
-      .on('ready', () => {
-        $this.partialsReady = true
-        tryEmitReady()
-      })
-  }
-
-  ready() {
-    return new Promise((accept, reject) => {
-      this.on('ready', accept)
-      this.on('error', reject)
-    })
-  }
-
-  render(viewPath: string, context?: any): string {
-    let view = this.compiledViews[viewPath]
-    if (view)
-      return view(context)
-    else
-      throw new Error(`view '${viewPath}' not found`)
-  }
-
-  hasView(viewPath: string): boolean {
-    return !!this.compiledViews[viewPath]
   }
 }
 
-class Website {
-  scripts: ScriptContainer
-  views: ViewContainer
+export default class CometPlatform extends EventEmitter { 
 
-  constructor(scripts, views) {
-    this.scripts = scripts;
-    this.views = views
-  }
-}
-
-export default class CometPlatform { 
-
+  sourcesDir: string
   appScripts: ScriptContainer
   appViews: ViewContainer
   cometViews: ViewContainer
@@ -136,11 +40,23 @@ export default class CometPlatform {
   http: http.Server
 
   constructor(sourcesDir: string, scripts: ScriptContainer) {
+    super()
+    this.sourcesDir = sourcesDir
     this.appScripts = scripts
-    this.appViews = new ViewContainer(scripts, path.join(sourcesDir, 'partials'), path.join(sourcesDir, 'views'))
-    this.cometViews = new ViewContainer(path.join(path.dirname(__dirname), 'minisite', 'partials'), path.join(path.dirname(__dirname), 'minisite', 'views'))
-    let viewsReady
+    this.appViews = new ViewContainer({
+      scripts: scripts,
+      partialsDir: path.join(sourcesDir, 'partials'),
+      viewsDir: path.join(sourcesDir, 'views')
+    })
+    this.cometViews = new ViewContainer({
+      scripts: ScriptContainer.fromJSON(path.join(__dirname, 'minisite', 'scripts.json')),
+      partialsDir: path.join(path.dirname(__dirname), 'minisite', 'partials'),
+      viewsDir: path.join(path.dirname(__dirname), 'minisite', 'views')
+    })
 
+    let tryEmit = guardedEmitter(this, 'ready')
+    this.cometViews.on('ready', tryEmit())
+    this.appViews.on('ready', tryEmit())
   }
 
   render(viewPath, context): string {
@@ -156,6 +72,18 @@ export default class CometPlatform {
     methods.forEach(method => {
       this.app[method](route, callback)
     })
+  }
+
+  spawnProcess() {
+    let mainFile = path.join(this.sourcesDir, 'main.js')
+    if (fs.existsSync(mainFile))
+      require('node-dev')(mainFile, [], [])
+    else
+      try {
+        this.runServer()
+      } catch (e) {
+        throw e;
+      }
   }
 
   runServer() {

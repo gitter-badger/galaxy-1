@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "inlineSourceMap": true,
+    "outDir": "../lib/",
+    "target": "es5"
+  },
+  "exclude": ["node_modules/"]
+}
