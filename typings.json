@@ -1,0 +1,16 @@
+{
+  "name": "comet-platform",
+  "version": false,
+  "dependencies": {
+    "lodash": "registry:npm/lodash#4.0.0+20160416211519"
+  },
+  "ambientDependencies": {
+    "chokidar": "registry:dt/chokidar#1.4.3+20160316155526",
+    "handlebars": "registry:dt/handlebars#3.0.3+20160317120654",
+    "highland": "registry:dt/highland#1.14.0+20160425144847",
+    "node": "registry:dt/node#4.0.0+20160509154515"
+  },
+  "globalDependencies": {
+    "node": "registry:dt/node#6.0.0+20160608110640"
+  }
+}
