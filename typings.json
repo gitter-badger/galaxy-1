@@ -2,6 +2,7 @@
   "name": "comet-platform",
   "version": false,
   "dependencies": {
+    "chalk": "registry:npm/chalk#1.0.0+20160211003958",
     "lodash": "registry:npm/lodash#4.0.0+20160416211519"
   },
   "ambientDependencies": {
