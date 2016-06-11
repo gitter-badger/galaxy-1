@@ -35,6 +35,8 @@
     "reflect-metadata": "^0.1.3",
     "semver": "^5.1.0",
     "source-map-support": "^0.4.0",
+    "systemjs": "^0.19.30",
+    "wildglob": "^0.1.0",
     "winston": "^2.2.0"
   },
   "devDependencies": {
