@@ -14,6 +14,7 @@ import * as BPromise from "bluebird"
 import { Config, JSONConfigStorage } from "../lib/ConfigProvider"
 import { Runtime } from "../lib/Runtime"
 import { TerminalConsole } from "../lib/TerminalConsole"
+import { FSPluginProvider } from "../lib/Plugin"
 
 const terminal = new TerminalConsole()
 
@@ -63,11 +64,16 @@ const commands = {
     console.log('Bye.')
     process.exit()
   }
+, "config": {
+    "get": async (argv) => {
+      const config = await getLocalConfig()
+      console.log(await config.get(argv._[0]))
+    }
+  }
 , "nature": {
     "list": async () => {
       const config = await getLocalConfig()
       const natures = (await config.get("natures")) || []
-      console.log(await config.get('natures'))
       if (natures.length == 0)
         console.log(chalk.red('No natures added yet.'))
       else
@@ -77,13 +83,13 @@ const commands = {
     }
   , "add": async (argv) => {
       const config = await getLocalConfig()
-      if (argv._.length < 3)
+      if (argv._.length == 0)
         throw new Error(`no natures given`)
-      if (argv._.length > 3)
+      if (argv._.length > 1)
         throw new Error(`too much argument`)
-      const nature = argv._[2]
+      const nature = argv._[0]
       if (await config.member("natures", nature))
-        console.log(chalk.red(`nature already exists`))
+        console.log(chalk.red(`Nature already exists.`))
       else {
         await config.push('natures', nature)
         console.log(chalk.green(`Nature '${nature}' added.`))
@@ -91,14 +97,29 @@ const commands = {
       
     }
   , "remove": async (argv) => {
-
+      const config = await getLocalConfig()
+      while (argv._.length > 0) {
+        const nature = argv._[0]
+        if (!(await config.member('natures', nature)))
+          console.log(chalk.red(`Nature '${nature}' not found.`))
+        else {
+          await config.remove('natures', nature)
+          console.log(chalk.green(`Removed nature '${nature}'.`))
+        }
+        argv._.shift()
+      }
     }
   }
 , "plugin": {
+    "list": async () => {
+      const config = new JSONConfigStorage(path.join(cometDir, 'environment.json'))
+      const plugins = FSPluginProvider.open(config.get("pluginsDir") || path.join(__dirname, "..", "plugins"))
+  , }
     "add": async () => {
+      throw new Error('only local packages are supported at this moment')
     }
   , "remove": async () => {
-
+      throw new Error('only local packages are supported at this moment')
     }
   }
 }
@@ -117,7 +138,7 @@ async function processCommandLine(argv) {
       console.log(` - ${key}`)
     })
   else
-    spec(argv)
+    return spec(argv)
 }
 
 async function processArgs() {
