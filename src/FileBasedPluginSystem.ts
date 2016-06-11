@@ -8,7 +8,7 @@ import * as fs from "fs"
 import * as path from "path"
 
 @injectable()
-export class FileBasedPluginSystem {
+export class FileBasedPluginSystem implements IPluginSystem {
 
   dir: string
 
