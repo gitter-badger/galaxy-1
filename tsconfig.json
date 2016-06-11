@@ -2,9 +2,10 @@
   "compilerOptions": {
     "module": "commonjs",
     "inlineSourceMap": true,
-    "outDir": "../lib/",
+    "outDir": "build/",
     "target": "es6",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
-  }
+  }, 
+  "exclude": ["node_modules"]
 }
