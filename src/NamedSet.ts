@@ -1,13 +1,9 @@
 
+/// <reference path="../typings/index.d.ts" />
+
 import * as stream from "stream"
 
-export interface INamedSet<T> {
-  has(name: string)
-  get(name: string)
-  add(name: string, value: T)
-  remove(name: string)
-  clear()
-}
+import { INamedSet } from "../interfaces/INamedSet.ts"
 
 export class NamedSet<T> implements INamedSet<T> {
   elements: { [name: string]: T }
