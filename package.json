@@ -26,6 +26,7 @@
     "chokidar": "^1.5.1",
     "express": "^4.13.4",
     "fs-extra": "^0.30.0",
+    "glob": "^7.0.3",
     "handlebars": "^4.0.5",
     "inversify": "^2.0.0-beta.8",
     "inversify-dts": "^1.0.5",
@@ -36,7 +37,6 @@
     "semver": "^5.1.0",
     "source-map-support": "^0.4.0",
     "systemjs": "^0.19.30",
-    "wildglob": "^0.1.0",
     "winston": "^2.2.0"
   },
   "devDependencies": {
