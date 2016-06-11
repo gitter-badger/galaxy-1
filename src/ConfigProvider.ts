@@ -100,9 +100,9 @@ export class JSONConfigStorage extends EventEmitter implements ConfigStorage {
     const arr = this.properties[name]
     if (!arr)
       return false
-    if (typeof(arr) !== 'array')
+    if (!(arr instanceof Array))
       throw new Error(`${name} is not an array`)
-    return !!_.find(arr, value)
+    return arr.indexOf(value) != -1
   }
   
   set(name: string, value: any): Promise<void> {
@@ -119,6 +119,15 @@ export class JSONConfigStorage extends EventEmitter implements ConfigStorage {
     return this.save()
   }
 
+  remove(name: string, value: any) {
+    const arr = this.properties[name]
+    if (!(arr instanceof Array))
+      throw new Error(`${name} is not an array`)
+    const idx = arr.indexOf(value)
+    arr.splice(idx, 1)
+    return this.save()
+  }
+
   push(name: string, value: any) {
     if (!this.properties[name])
       this.properties[name] = []
@@ -126,7 +135,7 @@ export class JSONConfigStorage extends EventEmitter implements ConfigStorage {
     if (!(this.properties[name] instanceof Array))
       throw new Error(`config entry ${name} is not an array`)
     this.properties[name].push(value)
-    return this.writeJSON()
+    return this.save()
   }
 
 }

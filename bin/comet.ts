@@ -1,6 +1,9 @@
 #!/usr/bin/env NODE
 
 /// <reference path="../typings/index.d.ts" />
+/// <reference path="node_modules/inversify-dts/inversify/inversify.d.ts" />
+/// <reference path="node_modules/reflect-metadata/reflect-metadata.d.ts" />
+
 require('source-map-support').install()
 
 import * as _ from "lodash"
@@ -10,11 +13,16 @@ import * as readline from "readline"
 import * as minimist from "minimist"
 import * as chalk from "chalk"
 import * as BPromise from "bluebird"
+import "reflect-metadata";
+import { Kernel } from "inversify"
 
 import { Config, JSONConfigStorage } from "../lib/ConfigProvider"
-import { Runtime } from "../lib/Runtime"
+import { IConsole } from "../lib/IConsole"
+import { IPluginSystem } from "../lib/IPluginSystem"
+
+import { HTTPNature } from "../lib/HTTPNature"
 import { TerminalConsole } from "../lib/TerminalConsole"
-import { FSPluginProvider } from "../lib/Plugin"
+import { FileBasedPluginSystem } from "../lib/FileBasedPluginSystem"
 
 const terminal = new TerminalConsole()
 
@@ -53,16 +61,44 @@ function runServices() {
   runtime.start()
 }
 
+const kernel = new Kernel();
+kernel.bind<number>("HTTPPort").toConstantValue(3000)
+kernel.bind<IPluginSystem>("IPluginSystem").to(FileBasedPluginSystem)
+kernel.bind<IConsole>("IConsole").to(TerminalConsole)
+kernel.bind<INature>("INature").to(HTTPNature)
+
 const aliases = {
   "exit": "quit"
 , "q": "quit"
 , "natures": "nature list"
 }
 
+let runnables = []
+
 const commands = {
   "quit": () => {
     console.log('Bye.')
     process.exit()
+  }
+, "start": async () => {
+    const nature = kernel.get<INature>("INature")
+    const runnable = nature.getDefaultEntryPoint()
+    await runnable.start()
+    console.log(chalk.green('All systems started.'))
+    runnables.push(runnable)
+  }
+, "stop": () => {
+    if (runnables.length === 0)
+      throw new Error(`not running`)
+    return Promise
+      .all(runnables.map(runnable => runnable.stop()))
+      .then(() => console.log(chalk.green('Stopped.')))
+  }
+, "status": () => {
+    if (runnables.length > 0)
+      console.log(chalk.green("Running."))
+    else
+      console.log(chalk.red("Not running."))
   }
 , "config": {
     "get": async (argv) => {
@@ -113,9 +149,13 @@ const commands = {
 , "plugin": {
     "list": async () => {
       const config = new JSONConfigStorage(path.join(cometDir, 'environment.json'))
-      const plugins = FSPluginProvider.open(config.get("pluginsDir") || path.join(__dirname, "..", "plugins"))
-  , }
-    "add": async () => {
+      const plugins = await FSPluginProvider.create((await config.get("pluginsDir")) || path.join(__dirname, "..", "plugins"))
+      const pluginNames = await plugins.list()
+      pluginNames.forEach(pluginName => {
+        console.log(pluginName)
+      })
+    }
+  , "add": async () => {
       throw new Error('only local packages are supported at this moment')
     }
   , "remove": async () => {

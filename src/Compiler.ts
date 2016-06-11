@@ -1,19 +1,19 @@
 
-/**
- * A compiler converts a given file to another representation
- * that is closer to the system's hardware.
- */
-export interface Compiler {
-  /**
-   * Compile the content residing on the given path.
-   */
-  compile(path: string): any
+import { INamedSet } from "./NamedSet"
+
+export interface CompilerError {
+  code?: number
+  line?: number
+  column?: number
+  message: string
+  file?: string
 }
 
-/**
- * A compiler that delegates its compilation step to several other compilers
- * based on the file information.
- */
-export class DelegatingCompiler {
-  
+export interface Compiler {
+  compile(paths: INamedSet<string>): any
 }
+
+export interface CompilerConstructor {
+  new(): Compiler
+}
+
