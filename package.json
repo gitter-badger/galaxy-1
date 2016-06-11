@@ -26,7 +26,6 @@
     "bluebird": "^3.4.0",
     "chokidar": "^1.5.1",
     "core-decorators": "^0.12.3",
-    "es6-module-loader": "^0.17.11",
     "express": "^4.13.4",
     "fs-extra": "^0.30.0",
     "glob": "^7.0.3",
