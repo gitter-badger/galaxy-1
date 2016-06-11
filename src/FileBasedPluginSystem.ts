@@ -27,9 +27,6 @@ export class FileBasedPluginSystem implements IPluginSystem {
   constructor(dir: string) {
     this.dir = dir
     this.kernel = new Kernel()
-    this.annotations = {
-      "INatureProvider": nature
-    }
   }
 
   async loadAll(): Promise<Plugin> {
