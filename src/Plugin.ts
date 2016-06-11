@@ -3,7 +3,7 @@
 
 import * as System from "systemjs"
 
-class Plugin {
+export class Plugin {
 
   loader: System
   dir: string

@@ -10,7 +10,8 @@ import * as glob from "glob"
 import * as _ from "lodash"
 import "reflect-metadata"
 import { promisify } from "bluebird"
-import { nature } from "../annotations/nature"
+
+import { Plugin } from "./Plugin"
 import { INatureProvider } from "../interfaces/INatureProvider"
 
 const readdirAsync = promisify(fs.readdir)
