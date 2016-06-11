@@ -24,6 +24,7 @@
   "homepage": "https://github.com/samvv/comet#readme",
   "dependencies": {
     "chokidar": "^1.5.1",
+    "core-decorators": "^0.12.3",
     "express": "^4.13.4",
     "fs-extra": "^0.30.0",
     "glob": "^7.0.3",
