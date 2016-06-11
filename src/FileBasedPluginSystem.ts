@@ -2,18 +2,41 @@
 /// <reference path="../typings/index.d.ts" />
 /// <reference path="../node_modules/inversify-dts/inversify/inversify.d.ts" />
 
-import { injectable } from "inversify"
-
 import * as fs from "fs"
 import * as path from "path"
+
+import { injectable, IKernel, Kernel } from "inversify"
+import * as glob from "glob"
+import * as _ from "lodash"
+import "reflect-metadata"
+import { promisify } from "bluebird"
+import { nature } from "../annotations/nature"
+import { INatureProvider } from "../interfaces/INatureProvider"
+
+const readdirAsync = promisify(fs.readdir)
+
+const globAsync = promisify(glob)
 
 @injectable()
 export class FileBasedPluginSystem implements IPluginSystem {
 
   dir: string
+  kernel: IKernel
 
   constructor(dir: string) {
     this.dir = dir
+    this.kernel = new Kernel()
+    this.annotations = {
+      "INatureProvider": nature
+    }
+  }
+
+  async loadAll(): Promise<Plugin> {
+    const system = this
+    const dirs = (await readdirAsync(this.dir))
+      .map(file => path.join(system.dir, file))
+      .filter(file => fs.statSync(file).isDirectory())
+    return dirs.map(dir => new Plugin(dir))
   }
 
   list(): Promise<string[]> { 
@@ -30,6 +53,3 @@ export class FileBasedPluginSystem implements IPluginSystem {
 
 }
 
-export const FileBasedPluginSystemProvider: IProviderCreator = (context) => {
-
-}

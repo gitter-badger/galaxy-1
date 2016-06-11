@@ -14,17 +14,13 @@ import * as minimist from "minimist"
 import * as chalk from "chalk"
 import * as BPromise from "bluebird"
 import "reflect-metadata";
-import { Kernel } from "inversify"
+import { PlanAndResolve, Kernel } from "inversify"
 
-import { Config, JSONConfigStorage } from "../lib/ConfigProvider"
-import { IConsole } from "../lib/IConsole"
-import { IPluginSystem } from "../lib/IPluginSystem"
+import { JSONConfigManager } from "../src/JSONConfigManager"
+import { FileBasedPluginSystem } from "../src/FileBasedPluginSystem"
 
-import { HTTPNature } from "../lib/HTTPNature"
-import { TerminalConsole } from "../lib/TerminalConsole"
-import { FileBasedPluginSystem } from "../lib/FileBasedPluginSystem"
-
-const terminal = new TerminalConsole()
+//import { HTTPNature } from "../lib/HTTPNature"
+//import { TerminalConsole } from "../lib/TerminalConsole"
 
 const argv = minimist(process.argv.splice(2))
 
@@ -50,22 +46,28 @@ function createAndRunProject() {
   runtime.start()
 }
 
-
-function runServices() {
-  terminal.debug('Loading configuration ...')
-  const config = new JSONConfigStorage(path.join(cometDir, 'environment.json'))
-  const runtime = new Runtime(sourcesDir, {
-    console: terminal
-  , nature: 'bin'
-  })
-  runtime.start()
+function logger(planAndResolve: PlanAndResolve<any>): PlanAndResolve<any> {
+  return (args: PlanAndResolveArgs) => {
+    const start = new Date().getTime();
+    const result = planAndResolve(args);
+    const end = new Date().getTime();
+    console.log(end-start);
+    return result;
+  };
 }
 
-const kernel = new Kernel();
-kernel.bind<number>("HTTPPort").toConstantValue(3000)
-kernel.bind<IPluginSystem>("IPluginSystem").to(FileBasedPluginSystem)
-kernel.bind<IConsole>("IConsole").to(TerminalConsole)
-kernel.bind<INature>("INature").to(HTTPNature)
+async function loadEnvironment() {
+  const kernel = new Kernel();
+  kernel.applyMiddleware(logger)
+  const plugins = new FileBasedPluginSystem()
+  await plugins.l)oadProviders()
+}
+
+async function loadRuntime() {
+  const runtime = new Runtime()
+  // Configuration
+  kernel.bind<number>("HTTPPort").toConstantValue(3000)
+}
 
 const aliases = {
   "exit": "quit"
@@ -81,7 +83,6 @@ const commands = {
     process.exit()
   }
 , "start": async () => {
-    const nature = kernel.get<INature>("INature")
     const runnable = nature.getDefaultEntryPoint()
     await runnable.start()
     console.log(chalk.green('All systems started.'))
@@ -94,11 +95,16 @@ const commands = {
       .all(runnables.map(runnable => runnable.stop()))
       .then(() => console.log(chalk.green('Stopped.')))
   }
-, "status": () => {
+, "status": async () => {
     if (runnables.length > 0)
       console.log(chalk.green("Running."))
     else
       console.log(chalk.red("Not running."))
+  }
+, "test": async () => {
+    const plugins = new FileBasedPluginSystem(path.join(path.dirname(__dirname), 'plugins'))
+    const loaded = await plugins.loadAll()
+    console.log(loaded)
   }
 , "config": {
     "get": async (argv) => {
