@@ -6,7 +6,7 @@ import * as System from "systemjs"
 import { IModuleLoader } from "../interfaces/IModuleLoader"
 
 // TODO: might be worthwile not to depend on systemjs
-class ModuleInterpreter implements IModuleLoader {
+export class ModuleInterpreter implements IModuleLoader {
 
   dir: string
   system: System
