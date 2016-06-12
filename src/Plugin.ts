@@ -12,7 +12,8 @@ import * as glob from "glob"
 import * as _ from "lodash"
 
 import { IModuleLoader } from "../interfaces/IModuleLoader"
-import { NPMModuleLoader } from "./NPMModuleLoader"
+import { ModuleInterpreter } from "./ModuleInterpreter"
+import { NPMDependencyLoader } from "./NPMModuleLoader"
 import { DelegatingModuleLoader } from "./DelegatingModuleLoader"
 
 const globAsync = promisify(glob)
@@ -21,6 +22,7 @@ export class Plugin {
 
   loader: IModuleLoader
   npmLoader: NPMModuleLoader
+  fileLoader: NPMModuleLoader
   dir: string
 
   constructor(dir: string, parentLoader: IModuleLoader) {
@@ -29,8 +31,8 @@ export class Plugin {
 
     const loader = this.loader = new DelegatingModuleLoader()
     loader.addLoader(parentLoader)
-    this.npmLoader = new NPMModuleLoader(this.dir)
-    this.localLoader = new SystemJSLoader(this.dir)
+    this.npmLoader = new NPMDependencyLoader(path.join(this.dir, 'node_modules'))
+    this.fileLoader = new ModuleInterpreter(this.dir)
     loader.addLoader(this.npmLoader)
   }
 
