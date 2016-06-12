@@ -3,7 +3,7 @@ import * as _ from "lodash"
 
 import { IModuleLoader } from "../interfaces/IModuleLoader"
 
-class DelegatingModuleLoader implements IModuleLoader {
+export class DelegatingModuleLoader implements IModuleLoader {
   loaders: IModuleLoader[]
   addLoader(loader: IModuleLoader) {
     this.loaders.push(loader)
