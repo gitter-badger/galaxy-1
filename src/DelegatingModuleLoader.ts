@@ -9,7 +9,10 @@ class DelegatingModuleLoader implements IModuleLoader {
     this.loaders.push(loader)
   }
   removeLoader(loader: IModuleLoader) {
-    _.findIndex(this.loaders, loader)
+    const idx = _.findIndex(this.loaders, loader)
+    if (idx === -1)
+      throw new Error(`loader not found`)
+    this.loaders.splice(idx, 1)
   }
 
   async hasModule(name: string) { 
