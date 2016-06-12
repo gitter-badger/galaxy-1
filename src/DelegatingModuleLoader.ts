@@ -4,10 +4,13 @@ import * as _ from "lodash"
 import { IModuleLoader } from "../interfaces/IModuleLoader"
 
 export class DelegatingModuleLoader implements IModuleLoader {
-  loaders: IModuleLoader[]
+
+  loaders: IModuleLoader[] = []
+
   addLoader(loader: IModuleLoader) {
     this.loaders.push(loader)
   }
+
   removeLoader(loader: IModuleLoader) {
     const idx = _.findIndex(this.loaders, loader)
     if (idx === -1)
