@@ -40,7 +40,7 @@ export class Plugin {
     const files = await globAsync(path.join(this.dir, 'entities/**/*.js'))
         , plugin = this
     return Promise.all(files.map(async (file) => {
-      const mod = await plugin.loader.import(file)
+      const mod = await plugin.loader.importModule(file)
       _.forEach(mod, (prop, key) => {
         if (Reflect.hasMetadata("interface", prop)
             && Reflect.hasMetadata("name", prop)) {
