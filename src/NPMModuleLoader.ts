@@ -24,7 +24,7 @@ class NPMDependencyLoader implements IModuleLoader {
     return packageJSON.main || 'index' 
   }
 
-  private async import(name: string): Promise<string> {
+  private async getLoader(name: string): Promise<string> {
     if (this.loadedDependencies[name])
       return this.loadedDependencies[name]
     const packages = await fs.readdir(this.modulesDir)
@@ -38,7 +38,10 @@ class NPMDependencyLoader implements IModuleLoader {
     return loader
   }
   
-  import (name: string) {
+  async importModule(name: string) {
+    const loader = await getLoader(name)
+    loader.import(await this.getEntryPoint(name))
+  }
   }
 
 }
