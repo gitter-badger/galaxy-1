@@ -3,7 +3,7 @@ Comet Interfaces
 
 Every interface declared in this directory is extensible by third-party plugins. 
 
-⁉️ A full guide will be available soon.
+:question: A full guide will be available soon.
 
 **Still have questions?**
 
