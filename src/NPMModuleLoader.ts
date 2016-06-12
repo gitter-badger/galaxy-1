@@ -42,7 +42,6 @@ class NPMDependencyLoader implements IModuleLoader {
     const loader = await getLoader(name)
     loader.import(await this.getEntryPoint(name))
   }
-  }
 
 }
 
