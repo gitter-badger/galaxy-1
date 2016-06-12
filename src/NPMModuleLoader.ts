@@ -7,7 +7,7 @@ import * as _ from "lodash"
 
 import { IModuleLoader } from "../interfaces/IModuleLoader"
 
-class NPMDependencyLoader implements IModuleLoader {
+export class NPMDependencyLoader implements IModuleLoader {
 
   modulesDir: string
   extensions: string[]
@@ -39,8 +39,8 @@ class NPMDependencyLoader implements IModuleLoader {
   }
   
   async importModule(name: string) {
-    const loader = await getLoader(name)
-    loader.import(await this.getEntryPoint(name))
+    const loader = await this.getLoader(name)
+    loader.importModule(await this.getEntryPoint(name))
   }
 
 }
