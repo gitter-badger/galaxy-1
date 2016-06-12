@@ -1,37 +1,31 @@
 
 /// <reference path="../typings/index.d.ts" />
+/// <reference path="../node_modules/inversify-dts/inversify/inversify.d.ts" />
+/// <reference path="../node_modules/reflect-metadata/reflect-metadata.d.ts" />
 
-import * as path from "path"
-import * as fs from "fs"
+import { inject } from "inversify"
 
-import { NamedSet } from "./NamedSet"
-import { Nature } from "./Nature"
-import { PluginProvider } from "./Plugin"
+import { INamedSet } from "../interfaces/INamedSet"
+import { INature } from "../interfaces/INature"
+import { IConsole } from "../interfaces/IConsole"
 
 export interface RuntimeOptions {
   sourcesDir: string
-  console: Console
 }
 
 export class Runtime {
 
-  console: Console
   sourcesDir: string
 
-  constructor(options) {
+  @inject("INature")
+  natures: INature[]
+
+  @inject("IConsole")
+  consoles: IConsole[]
+
+  constructor() {
     this.sourcesDir = options.sourcesDir
-    this.console = options.console
-    this.pluginLoader = options.pluginLoader
   }
 
-  getNatures() {
-    
-  }
-
-  start() {
-    this.getNatures().map(nature => {
-      nature.getDefaultEntryPoint().run(console)
-    })
-  }
 }
 
