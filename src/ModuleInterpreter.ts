@@ -1,37 +1,32 @@
 
 import * as fs from "fs-promise"
 import * as path from "path"
-import * as System from "systemjs"
 
 import { IModuleLoader } from "../interfaces/IModuleLoader"
 
-// TODO: might be worthwile not to depend on systemjs
 export class ModuleInterpreter implements IModuleLoader {
 
-  dir: string
-  system: System
-  extensions = ['.js', '.coffee', '.ts']
+  rootDir: string
+  extensions = ['','.js', '.coffee', '.ts']
 
   private async getFilePath(name: string): Promise<string> {
     const files = []
-    const p = path.resolve(this.dir, name)
     await Promise.all(this.extensions.map(async (ext) => {
-      const file = p+ext
-      if (await fs.access(file, fs.R_OK))
+      const file = path.resolve(this.rootDir, name+ext)
+      if (await fs.exists(file))
         files.push(file)
     }))
     // FIXME: should return file prioritized on extension order
     return files[0]
   }
 
-  constructor() {
-    this.system = new System.constructor()
+  constructor(rootDir: string) {
+    this.rootDir = rootDir
     const loader = this
-    this.system.locate = (load) => loader.getFilePath(load.name)
   }
 
-  importModule(name: string): Promise<any> {
-    return this.system.import(name)
+  async importModule(name: string): Promise<any> {
+    return require(await this.getFilePath(name))
   }
 
   hasModule(name: string) { 
