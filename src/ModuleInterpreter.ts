@@ -5,7 +5,7 @@ import * as System from "systemjs"
 
 import { IModuleLoader } from "../interfaces/IModuleLoader"
 
-// TODO: currently using systemjs, might be worthwile not to depend on it
+// TODO: might be worthwile not to depend on systemjs
 class ModuleInterpreter implements IModuleLoader {
 
   dir: string
@@ -20,7 +20,8 @@ class ModuleInterpreter implements IModuleLoader {
       if (await fs.access(file, fs.R_OK))
         files.push(file)
     }))
-    return files
+    // FIXME: should return file prioritized on extension order
+    return files[0]
   }
 
   constructor() {
