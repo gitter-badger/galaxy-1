@@ -1,32 +1,37 @@
 
 /// <reference path="../typings/index.d.ts" />
+/// <reference path="../node_modules/inversify-dts/inversify/inversify.d.ts" />
 
+import * as path from "path"
+
+import { IKernel } from "inversify"
+import { promisify } from "bluebird"
+import * as fs from "fs-promise"
 import * as System from "systemjs"
+import * as glob from "glob"
+import * as _ from "lodash"
+
+import { IModuleLoader } from "../interfaces/IModuleLoader"
+import { NPMModuleLoader } from "./NPMModuleLoader"
+import { DelegatingModuleLoader } from "./DelegatingModuleLoader"
+
+const globAsync = promisify(glob)
 
 export class Plugin {
 
-  loader: System
+  loader: IModuleLoader
+  npmLoader: NPMModuleLoader
   dir: string
 
-  constructor(dir: string) {
+  constructor(dir: string, parentLoader: IModuleLoader) {
 
     this.dir = dir
 
-    const loader = this.loader = new System.constructor()
-
-    const oldnormalize = loader.normalize
-    loader.normalize = (load) => {
-      console.log(load)
-      return oldnormalize.call(loader, load)
-    
-    }
-
-    const oldlocate = loader.locate
-    loader.locate = (load) => {
-      console.log(`Locating ${load.name} ...`)
-      return oldlocate.call(loader, load)
-    }
-
+    const loader = this.loader = new DelegatingModuleLoader()
+    loader.addLoader(parentLoader)
+    this.npmLoader = new NPMModuleLoader(this.dir)
+    this.localLoader = new SystemJSLoader(this.dir)
+    loader.addLoader(this.npmLoader)
   }
 
   async loadProviders(kernel: IKernel) { 
