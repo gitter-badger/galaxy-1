@@ -1,7 +1,7 @@
 Comet Runtime
 =============
 
-Comet is an application runtime that allows application to run under the comet platform.
+This is the application runtime that allows applications that were built using the comet platform to run.
 
 :warning: This is a **WIP**
 
