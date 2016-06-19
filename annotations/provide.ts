@@ -1,26 +1,18 @@
 
-/// <reference path="../node_modules/reflect-metadata/reflect-metadata.d.ts" />
+/// <reference path="../typings/index.d.ts" />
+/// <reference path="../node_modules/inversify-dts/inversify/inversify.d.ts" />
 
-export function provide(intf: string) {
-  return (target) => {
-    if (Reflect.hasMetadata("interface", target))
-      throw new Error(`${target} already has an interface defined`)
-    Reflect.defineMetadata("provided", true, target)
-    Reflect.defineMetadata("interface", intf, target)
-    return target
-  }
-}
+import { IKernel } from "inversify"
 
-export function provideNamed(intf: string, name: string) {
-  if (!name)
-    throw new Error(`no name given for interface instanciation`)
-  return (target) => {
-    if (Reflect.hasMetadata("interface", target))
-      throw new Error(`${target} already has an interface defined`)
-    Reflect.defineMetadata("provided", true, target)
-    Reflect.defineMetadata("interface", intf, target)
-    Reflect.defineMetadata("name", name, target)
-    return target
+export function createProvideAnnotation(kernel: IKernel) {
+  // TODO: add generalized constraints
+  return function provide(intf: Symbol, name?: string) {
+    return (target) => {
+      const binding = kernel.bind(intf).to(target)
+      if (name)
+        binding.whenTargetNamed(name)
+      return target
+    }
   }
 }
 
