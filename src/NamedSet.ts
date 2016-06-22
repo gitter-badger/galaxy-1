@@ -16,12 +16,12 @@ export class NamedSet<T> implements INamedSet<T> {
   get(name: string) {
     const res = this.elements[name]
     if (!res)
-      throw new Error(`${name} not found`)
+      throw new Error(`'${name}' not found`)
     return res
   }
   add(name: string, value: T) {
     if (this.has(name))
-      throw new Error(`${name} already exists`)
+      throw new Error(`'${name}' already exists`)
     this.elements[name] = value
   }
   remove(name: string) {
@@ -40,20 +40,18 @@ export class NamedSet<T> implements INamedSet<T> {
       }
       get(name: string) {
         if (!predicate(name))
-          throw new Error(`${name} does not exist`)
+          throw new Error(`'${name}' does not exist`)
         return parent.get(name)
       }
       add(name: string) {
         if (!predicate(name))
-          throw new Error(`${name} is not satisfied by predicate`)
+          throw new Error(`'${name}' is not satisfied by predicate`)
         parent.add(name)
       }
       remove(name: string) {
         if (!predicate(name))
-          throw new Error(`${name} is not satisfied by predicate`)
+          throw new Error(`'${name}' is not satisfied by predicate`)
         parent.remove(name)
-      }
-      list(): stream.Readable {
       }
       clear(){
         throw new Error(`not yet implemented`)
