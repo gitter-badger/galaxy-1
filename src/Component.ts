@@ -24,7 +24,7 @@ import { RootDirResolver } from "./RootDirResolver"
 
 const globAsync = promisify(glob)
 
-export class Component implements IApp {
+export class Component implements IComponent {
 
   name: string
   loader: InternalLoader
