@@ -1,8 +1,8 @@
 
-import { IConsole } from "./IConsole"
+/// <reference path="../typings/index.d.ts" />
 
 export interface IRunnable {
-  start(console: IConsole): Promise<void>
+  start(): Promise<void>
   stop(): Promise<void>
 }
 
