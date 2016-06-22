@@ -38,7 +38,7 @@ export class Component implements IComponent {
     this.rootDir = rootDir
 
     this.loader = new InternalLoader([
-      ['env', runtime.loader]
+      ['env', runtime.loader],
       ['app', app.loader],
       ['npm', NPMPackageLoader.forPackage(rootDir)],
     ])
