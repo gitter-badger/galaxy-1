@@ -1,8 +1,8 @@
 
 import { IModuleLoader } from "./IModuleLoader"
 
-export interface IApp {
+export interface IComponent {
   name: string
-  loader: IModuleLoader
+  moduleLoader: IModuleLoader
 }
 
