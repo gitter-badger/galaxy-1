@@ -7,6 +7,9 @@ import { INamedSet } from "../interfaces/INamedSet.ts"
 
 export class NamedSet<T> implements INamedSet<T> {
   elements: { [name: string]: T }
+  constructor(elements?: { [name: string]: T }) {
+    this.elements = elements || {}
+  }
   has(name: string) {
     return !!this.elements[name]
   }
