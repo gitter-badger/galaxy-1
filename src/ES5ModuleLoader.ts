@@ -6,8 +6,8 @@ import * as fs from "fs-promise"
 import * as path from "path"
 import * as vm from "vm"
 import { EventEmitter } from "events"
-import * as createDebug from "debug"
 
+import { debug } from "./debug"
 import { IList } from "../interfaces/IList"
 import { ISet } from "../interfaces/ISet"
 import { Set } from "./Set"
@@ -18,9 +18,7 @@ import { NamedSet } from "./NamedSet"
 import { IModuleResolver } from "../interfaces/IModuleResolver"
 import { IES5System } from "../interfaces/IES5System"
 
-const debug = createDebug("comet:modules")
-
-function compileTemplate(template: string, context: { [name: string]: string }) {
+function interpretTemplate(template: string, context: { [name: string]: string }) {
   _.forEach(context, (value, key) => {
     template = template.replace('\{\{'+key+'\}\}', value)
   })
@@ -28,14 +26,14 @@ function compileTemplate(template: string, context: { [name: string]: string }) 
 }
 
 class ES6Module extends EventEmitter {
+
   name: string
-  dependants: ISet<string>
-  internalDependencies: ISet<string>
+  dependants: ISet<string> = new Set<string>()
+  internalDependencies: ISet<string> = new Set<string>()
   // for if there are crazy people out there who export
   // a value with a non-primitive value as an identifier
-  exports: { [id: any]: any } 
-  setters: INamedSet<Function> = new NamedSet<Function>()
-  private execute: Function
+  exports: { [id: any]: any } = {}
+
   constructor(name) {
     super()
     this.name = name
@@ -44,32 +42,29 @@ class ES6Module extends EventEmitter {
       debug(`Module ${name} ready`)
     })
   }
-  setExecutor(execute: Function) {
-    this.execute = execute
-  }
-  export(idOrObj: any, val?: any) {
+
+  define(idOrObj: any, val?: any) {
     if (val === undefined && idOrObj instanceof Object)
       _.assign(this.exports, idOrObj)
     else
       this.exports[idOrObj] = val
   }
-  ensuredExecute() {
-    if (!this.execute)
-      throw new Error(`module not ready`)
-  }
+
 }
 
-class IntegratedES5System implements IES5System {
+class IntegratedES5System implements IES5System extends EventEmitter {
 
   private context: any
   private externalLoader: IModuleLoader
   private resolver: IModuleResolver
-  private modulesCache: INamedSet<ES6Module> = new NamedSet<ES6Module>()
+  private modules: INamedSet<ES6Module> = new NamedSet<ES6Module>()
   private registrations: XQueue<ES6Module> = new XQueue<ES6Module>()
+  private latestMod: ES6Module
 
   private wrappingTemplate: string = fs.readFileSync(path.join(__dirname, 'wrapper.js')).toString()
 
   constructor(externalLoader: IModuleLoader, resolver: IModuleResolver) {
+    super()
     this.externalLoader = externalLoader
     this.resolver = resolver
     this.context = vm.createContext({
@@ -85,21 +80,20 @@ class IntegratedES5System implements IES5System {
     const file = await this.resolver.resolve(name)
     if (!(await fs.exists(file)))
       throw new Error(`no file found for ${name}\nFiles tried:\n - ${file}`)
-    const script = compileTemplate(this.wrappingTemplate, {
+    const script = interpretTemplate(this.wrappingTemplate, {
       source: (await fs.readFile(file)).toString()
     , name: name // name.substring(name.lastIndexOf('/')+1)
     })
     vm.runInContext(script, this.context)
-    return new Promise<ES6Module>((accept, reject) => {
-      this.registrations.once('push', mod => {
-        accept(mod)
-      })
-    })
+    return this.latestMod
   }
 
   localize(nameFromFile: string) {
     const parent = this
     return new class System {
+      import(name: string) {
+        return parent.import(name)
+      }
       register(nameOrDeps, depsOrWrapper, wrapper?) {
         const name = wrapper ? nameOrDeps : nameFromFile
             , deps = wrapper ? depsOrWrapper : nameOrDeps
@@ -120,45 +114,43 @@ class IntegratedES5System implements IES5System {
         .catch(reject)
     })
   }
-  register(nameOrDeps, depsOrWrapper, wrapper?) {
 
-    const name = wrapper ? nameOrDeps : this.currentFileName
-        , deps = wrapper ? depsOrWrapper : nameOrDeps
-    wrapper = wrapper || depsOrWrapper
+  register(name, deps, wrapper?) {
 
-    const mod = new ES6Module(name) 
-        , metaModule = wrapper(mod.export)
-    mod.setExecutor(metaModule.execute)
-    metaModule.setters.forEach((setter, index) => {
-      const dep = deps[index]
-      if (!dep)
-        throw new Error(`invalid module format: setter-dependency mismatch`)
-      mod.setters.add(dep, setter)
-    })
-    this.modulesCache[mod.name] = mod
+    if (this.modules[name])
+      throw new Error(`a module under the same name already exists: ${name}`)
+
+    const mod = this.latestMod = new ES6Module(name) 
+        , metaModule = wrapper(mod.define.bind(mod))
+    this.modules[mod.name] = mod
 
     // load the dependencies
     const promisedDeps = Promise.all(deps.map(async (dep) => {
-      debug(`Module ${name} requests '${dep}' to be present.`)
       if (dep.charAt(0) === '.') {
         mod.internalDependencies.add(dep)
         let depMod
-        if (this.modulesCache[dep])
-          depMod = this.modulesCache[dep]
+        if (this.modules[dep])
+          depMod = this.modules[dep]
         else
           depMod = await this._load(dep) // dep will be added to the cache
         depMod.dependants.add(mod.name)
+        console.log(depMod)
+        depMod.on('ready', () => {
+          metaModule.setters[deps.indexOf(mod.name)](depMod.exports)
+        })
         return depMod
       } else {
         this.externalLoader.import(dep)
         return false
       }
     }))
-    console.log(metaModule)
-    promisedDeps.then(deps => {
-      mod.ensuredExecute()
-      mod.emit('ready')
-    })
+
+    promisedDeps
+      .then(deps => {
+        metaModule.execute()
+        mod.emit('ready')
+      })
+      .catch(e => console.log(e.stack))
   }
 }
 
