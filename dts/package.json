@@ -1,0 +1,11 @@
+{
+  "name": "@galactic/runtime-dts",
+  "version": "1.0.0",
+  "description": "TypeScript headers for the Galaxy runtime",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Sam Vervaeck",
+  "license": "MIT"
+}
