@@ -19,5 +19,8 @@
   "bugs": {
     "url": "https://github.com/GalacticJS/galaxy/issues"
   },
-  "homepage": "https://github.com/GalacticJS/galaxy#readme"
+  "homepage": "https://github.com/GalacticJS/galaxy#readme",
+  "dependencies": {
+    "debug": "^2.2.0"
+  }
 }
