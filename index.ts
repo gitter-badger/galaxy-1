@@ -35,7 +35,7 @@ function resolveModule(name: string) {
   }
 }
 
-export class Service {
+export class Service extends EventEmitter {
 
   component: Component
   name: string
@@ -44,6 +44,7 @@ export class Service {
   providers: Set<Provider> = new Set<Provider>()
 
   constructor(name, target, component) {
+    super()
     this.name = name
     this.component = component
     this.target = target
@@ -83,8 +84,8 @@ export class Component extends EventEmitter {
 
   name: string
   dir: string
-  loaded: boolean
   enabledDate: Date
+  loaded: boolean = false
   enabled: boolean = false
   dependencies: string[]
   runtime: Runtime
@@ -154,23 +155,45 @@ export class Runtime extends EventEmitter {
     method: Function
   }>>()
 
-  triggerServiceDiscovery(service, component) {
-    if (!this.discoverers.has(service.name))
-      return
-    const instances = this.discoverers.get(service.name)
-    for (const pair of instances) {
-      const instance = pair[0]
+  findServiceFromPrototype = (proto) => {
+    for (const pair of this.services) {
+      const service = pair.value
+      console.log(service.target.prototype, proto)
+      if (service.target.prototype === proto)
+        return service
+    }
+    return null
+  }
+
+  triggerServiceDiscovery(component) {
+    const getargs = (spec) => {
+      const args = {}
+      for (const index of Object.keys(spec.arguments)) {
+        if (!this.services.hasKey(spec.arguments[index]))
+          return null
+        args[index] = this.getServiceInstance(spec.arguments[index], component)
+      }
+      return _.values(args)
+    }
+    for (const pair of this.discoverers) {
+      const service = this.findServiceFromPrototype(pair[0])
           , methods = pair[1]
+      if (service === null)
+        break
+      const instance = service.instance
+      console.log(instance)
       for (const pair of methods) {
         const key = pair[0]
             , spec = pair[1]
-        const args = {}
-        for (const index of Object.keys(spec.arguments)) {
-          if (!this.services.hasKey(args[index]))
-            return
-          args[index] = this.getServiceInstance(spec.arguments[index], component)
+        if (spec.discovered)
+          return
+        if (Object.keys(spec.arguments).length !== instance[key].length)
+          break
+        const args = getargs(spec)
+        if (args !== null) {
+          instance[key].apply(instance, args)
+          spec.discovered = true
         }
-        instance[key].apply(instance, args)
       }
     }
   }
@@ -178,7 +201,7 @@ export class Runtime extends EventEmitter {
   addService(name: string, target, component) {
     const service = new Service(name, target, component)
     this.services.addPair(name, service)
-    this.triggerServiceDiscovery(service, component)
+    this.triggerServiceDiscovery(component)
 
 
     //for (const pair of this.components) {
