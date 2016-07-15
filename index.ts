@@ -103,6 +103,7 @@ export class Component extends EventEmitter {
   loadSync() {
     const mainFile = require.resolve(this.dir)
     this.exports = this.run(mainFile)
+    this.loaded = true
   }
 
   run(file: string) {
@@ -154,7 +155,6 @@ export class Runtime extends EventEmitter {
   }>>()
 
   triggerServiceDiscovery(service, component) {
-    console.log(service.name)
     if (!this.discoverers.has(service.name))
       return
     const instances = this.discoverers.get(service.name)
