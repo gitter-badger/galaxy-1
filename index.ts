@@ -87,6 +87,7 @@ export class Component extends EventEmitter {
   enabledDate: Date
   loaded: boolean = false
   enabled: boolean = false
+  locked = false
   dependencies: string[]
   runtime: Runtime
   exports: any
@@ -118,6 +119,8 @@ ${fs.readFileSync(file).toString()}
   }
 
   enable() {
+    if (this.locked)
+      throw new Error(`cannot enable a locked component`)
     if (this.enabled)
       return
     for (const dep of this.dependencies)
@@ -132,6 +135,8 @@ ${fs.readFileSync(file).toString()}
   disable() {
     if (this.required)
       throw new Error(`cannot disable core module`)
+    if (this.locked)
+      throw new Error(`cannot disable a locked component`)
     if (!this.enabled)
       return
     this.enabled = false
@@ -155,10 +160,10 @@ export class Runtime extends EventEmitter {
     method: Function
   }>>()
 
+  // TODO: optimize me
   findServiceFromPrototype = (proto) => {
     for (const pair of this.services) {
       const service = pair.value
-      console.log(service.target.prototype, proto)
       if (service.target.prototype === proto)
         return service
     }
@@ -181,7 +186,6 @@ export class Runtime extends EventEmitter {
       if (service === null)
         break
       const instance = service.instance
-      console.log(instance)
       for (const pair of methods) {
         const key = pair[0]
             , spec = pair[1]
