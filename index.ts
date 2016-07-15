@@ -9,14 +9,74 @@ import { EventEmitter } from "events"
 import { NamedSet } from "sync-containers"
 import * as createDebug from "debug"
 
+import {
+  createServiceAnnotation,
+  createProvideAnnotation,
+  createDiscoverAnnotation
+} from "./annotations"
+
 function packageStem(name: string) {
   return name.substring(name.indexOf('/')+1)
 }
 
-export interface Service {
+function readJSON(file, def?) {
+  if (fs.existsSync(file))
+    return JSON.parse(fs.readFileSync(file).toString())
+  if (def === undefined)
+    throw new Error(`${file} not found`)
+  return def
+}
+
+function resolveModule(name: string) {
+  try {
+    return require.resolve(name)
+  } catch(e) {
+    return null
+  }
+}
+
+export class Service {
+
   component: Component
   name: string
   target: Function
+  instance: Object | null = null
+  providers: Set<Provider> = new Set<Provider>()
+
+  constructor(name, target, component) {
+    this.name = name
+    this.component = component
+    this.target = target
+    this.instance = new target()
+  }
+
+  getInstance(component) {
+    return this.instance.provide !== undefined
+      ? this.instance.provide(component)
+      : this.instance
+  }
+
+}
+
+export class Provider {
+
+  component: Component
+  serviceName: string
+  target: Function
+  instance: Object | null = null
+
+  constructor(serviceName, target, component) {
+    this.serviceName = serviceName
+    this.target = target
+    this.component = component
+  }
+
+  getInstance(component) {
+    if (this.instance === null)
+      this.instance = new this.target()
+    return this.instance
+  }
+
 }
 
 export class Component extends EventEmitter {
@@ -24,11 +84,17 @@ export class Component extends EventEmitter {
   name: string
   dir: string
   loaded: boolean
+  enabledDate: Date
   enabled: boolean = false
+  dependencies: string[]
   runtime: Runtime
+  exports: any
+  required: boolean
 
-  constructor(runtime: Runtime, name: string, dir: string) {
+  constructor(runtime: Runtime, name: string, dir: string, deps: string[], required: boolean) {
     super()
+    this.required = required
+    this.dependencies = deps
     this.runtime = runtime
     this.name = name
     this.dir = dir
@@ -36,27 +102,37 @@ export class Component extends EventEmitter {
 
   loadSync() {
     const mainFile = require.resolve(this.dir)
-    this.exports = this.runtime.runInContext(`
-'use strict';
+    this.exports = this.run(mainFile)
+  }
+
+  run(file: string) {
+      return this.runtime.runInContext(`
+  'use strict';
 var _localized = ${this.runtime.globalName}.localize('${this.name}');
-(function (module, require, ${this.runtime.globalName}, service, consume) {
+(function (module, require, ${this.runtime.globalName}, service, inject, discover) {
 var exports = module.exports;
-${fs.readFileSync(mainFile).toString()}
-})(_localized.module, _localized.require, _localized.runtime, _localized.service, _localized.consume)`, { filename: mainFile })
+${fs.readFileSync(file).toString()}
+})(_localized.module, _localized.require, _localized.runtime, _localized.service, _localized.inject, _localized.discover)`, { filename: file })
   }
 
   enable() {
     if (this.enabled)
       return
+    for (const dep of this.dependencies)
+      this.runtime.getComponent(dep).enable()
     if (!this.loaded)
       this.loadSync()
     this.enabled = true
+    this.enabledDate = new Date()
     this.emit('enable')
   }
 
   disable() {
+    if (this.required)
+      throw new Error(`cannot disable core module`)
     if (!this.enabled)
       return
+    this.enabled = false
     this.emit('disable')
   }
 
@@ -64,18 +140,65 @@ ${fs.readFileSync(mainFile).toString()}
 
 export class Runtime extends EventEmitter {
 
-  components = new NamedSet<Component>()
+  componentsDir: string
   context: Object
   globalName: string
-  services: Service[] = []
+  debug: (msg: string) => any
+
+  components = new NamedSet<Component>()
+  services = new NamedSet<Service>()
+  targetMap = new Map<Function, Service | Provider>()
+  discoverers = new Map<Function, Map<string | Symbol, {
+    arguments: { [pos: number]: string }
+    method: Function
+  }>>()
+
+  triggerServiceDiscovery(service, component) {
+    console.log(service.name)
+    if (!this.discoverers.has(service.name))
+      return
+    const instances = this.discoverers.get(service.name)
+    for (const pair of instances) {
+      const instance = pair[0]
+          , methods = pair[1]
+      for (const pair of methods) {
+        const key = pair[0]
+            , spec = pair[1]
+        const args = {}
+        for (const index of Object.keys(spec.arguments)) {
+          if (!this.services.hasKey(args[index]))
+            return
+          args[index] = this.getServiceInstance(spec.arguments[index], component)
+        }
+        instance[key].apply(instance, args)
+      }
+    }
+  }
 
   addService(name: string, target, component) {
-    this.services.push({
-      target: target
-    , instance: new target() // empty constructor assumed
-    , name: name
-    , component
-    })
+    const service = new Service(name, target, component)
+    this.services.addPair(name, service)
+    this.triggerServiceDiscovery(service, component)
+
+
+    //for (const pair of this.components) {
+      //const component = pair.value
+      //this.debug(`Running service discovery for ${component.name}`)
+      //const packageJSON = readJSON(component.dir+'/package.json')
+      //const discoveryDir = path.resolve(component.dir, packageJSON.discovery || 'lib/discovery')
+      //const file = resolveModule(discoveryDir+'/'+name)
+      //if (file !== null) {
+        //this.debug(`Componnt '${component.name}' discovered '${name}'`)
+        //component.run(file)   
+      //}
+    //}
+  }
+
+  addProvider(serviceName, target, component) {
+    if (!this.providers.hasKey(serviceName))
+      this.providers.addPair(serviceName, new Set())
+    const providers = this.providers.getValue(serviceName)
+    providers.add(new Provider(serviceName, target, component))
   }
 
   runInContext(script, options?) {
@@ -83,10 +206,15 @@ export class Runtime extends EventEmitter {
   }
   
   getService(name: string) {
-    const service = _.find(this.services, { name: name })
-    if (service === undefined)
+    if (!this.services.hasKey(name))
       throw new Error(`service '${name}' not found`)
-    return service
+    return this.services.getValue(name)
+  }
+
+  getComponent(name: string) {
+    if (!this.components.hasKey(name))
+      throw new Error(`component '${name}' not found`)
+    return this.components.getValue(name)
   }
 
   getServiceInstance(name, component) {
@@ -101,23 +229,16 @@ export class Runtime extends EventEmitter {
   }
 
   localize(componentName) {
-    const component = this.components.getValue(componentName)
+    const component = this.getComponent(componentName)
     return {
-      service: (name) => {
-        return (target) => {
-          this.addService(name, target, component)
-        }
-      }
-    , consume: (serviceName) => {
-        return (target, propertyKey) => {
-          target[propertyKey] = this.getServiceInstance(serviceName, component)
-        }
-      }
+      service: createServiceAnnotation(this, component)
+    , discover: createDiscoverAnnotation(this, component)
+    , provide: createProvideAnnotation(this, component)
     , require: (moduleName) => {
         try {
           return require(moduleName)
         } catch(e) {
-          return require(path.resolve(component.dir, '/node_modules/'+moduleName))
+          return require(path.resolve(component.dir, 'node_modules/'+moduleName))
         }
       }
     , module: {
@@ -126,13 +247,28 @@ export class Runtime extends EventEmitter {
     }
   }
 
+  saveEnabledComponents() {
+    const enabled = []
+    for (const pair of this.components) {
+      const component = pair.value
+      if (component.enabled)
+        enabled.push(component.name)
+    }
+    fs.writeFileSync(this.componentsDir+'/enabled.json', JSON.stringify(enabled))
+  }
+
   constructor(options) {
+
     super()
+
     if (!options || typeof options !== 'object')
       throw new Error(`options must be an object`)
     if (!options.componentsDir || !path.isAbsolute(options.componentsDir))
       throw new Error(`must specify an absolute components directory`)
+
+    this.componentsDir = options.componentsDir
     this.globalName = options.globalName || 'runtime'
+
     this.context = {
       Promise: Promise
     , Symbol: Symbol
@@ -140,34 +276,52 @@ export class Runtime extends EventEmitter {
     , console: console
     , [this.globalName]: this
     }
+
     vm.createContext(this.context)
+
     this.debug = createDebug(options.name)
     this.runInContext(`require('source-map-support').install()`)
-    this.importComponentsSync(options.componentsDir)
-  }
 
-  getComponent(name: string) {
-    if (!this.components.hasKey(name))
-      throw new Error(`component '${name}' not found`)
-    return this.components.getValue(name)
-  }
+    this.importComponentsSync(options.componentsDir, options.required)
 
-  importComponentsSync(dir: string) {
-    fs.readdirSync(dir).forEach(file => {
-      this.addComponent(dir+'/'+file)
+    _.forEach(readJSON(this.componentsDir+'/enabled.json', []), name => {
+      this.getComponent(name).enable()
     })
   }
 
-  addComponent(dir: string) {
+  importComponentsSync(dir: string, required) {
+    fs.readdirSync(dir).forEach(file => {
+      if (fs.statSync(dir+'/'+file).isDirectory())
+        this.addComponent(dir+'/'+file, required)
+    })
+    required.forEach(name => this.getComponent(name).enable())
+  }
+
+  addComponent(dir: string, required: string[]) {
+
+
     const name = path.basename(dir)
-    const component = new Component(this, name, dir)
+        , isRequired = _.includes(required, name)
+        , deps = readJSON(dir+'/dependencies.json', [])
+        , component = new Component(this, name, dir, deps, isRequired)
+
     this.components.addPair(name, component)
     this.debug(`Component '${name}' added`)
+
+    if (!isRequired) {
+      component.on('enable', () => {
+        this.saveEnabledComponents()
+      })
+      component.on('disable', () => {
+        this.saveEnabledComponents()
+      })
+    }
+
     this.emit('add component', component)
   }
 
   async removeComponent(name: string) {
-    const component = this.components.getValue(name)
+    const component = this.getComponent(name)
     await component.disable()
     this.components.removeKey(name)
     this.emit('remove component', component)
