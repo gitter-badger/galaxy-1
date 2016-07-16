@@ -180,19 +180,18 @@ export class Runtime extends EventEmitter {
       }
       return _.values(args)
     }
-    for (const pair of this.discoverers) {
-      const service = this.findServiceFromPrototype(pair[0])
-          , methods = pair[1]
+    this.discoverers.forEach((methods, target) => {
+      const service = this.findServiceFromPrototype(target)
       if (service === null)
-        break
+        return
       const instance = service.instance
       for (const pair of methods) {
         const key = pair[0]
             , spec = pair[1]
-        if (spec.discovered)
-          return
         if (Object.keys(spec.arguments).length !== instance[key].length)
           break
+        if (spec.discovered === true)
+          return
         const args = getargs(spec)
         if (args !== null) {
           instance[key].apply(instance, args)
@@ -206,19 +205,6 @@ export class Runtime extends EventEmitter {
     const service = new Service(name, target, component)
     this.services.addPair(name, service)
     this.triggerServiceDiscovery(component)
-
-
-    //for (const pair of this.components) {
-      //const component = pair.value
-      //this.debug(`Running service discovery for ${component.name}`)
-      //const packageJSON = readJSON(component.dir+'/package.json')
-      //const discoveryDir = path.resolve(component.dir, packageJSON.discovery || 'lib/discovery')
-      //const file = resolveModule(discoveryDir+'/'+name)
-      //if (file !== null) {
-        //this.debug(`Componnt '${component.name}' discovered '${name}'`)
-        //component.run(file)   
-      //}
-    //}
   }
 
   addProvider(serviceName, target, component) {
