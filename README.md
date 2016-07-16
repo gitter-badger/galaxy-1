@@ -5,6 +5,8 @@ Galaxy
 
 :warning: This platform is still in its incubation phase
 
+:memo: We are searching for people who can help mature this project. If you are interested, [file an issue](https://github.com/GalacticJS/galaxy/issues).
+
 Galaxy enables you to build JavaScript applications which are entirely **pluggable**. We achieve this by introducing the concept of **services**, which can be consumed by components thoughout the application.
 
 ## How it works
@@ -23,7 +25,7 @@ class LoggerService {
 Now, the new service can be used by other services anywhere in your application. For example:
 
 ```ts
-// interfaces, download this to your component
+// interfaces; download this to your component
 /// <reference path="logger.d.ts" />
 
 @service("mycomplexservice")
