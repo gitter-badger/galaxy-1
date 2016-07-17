@@ -5,6 +5,7 @@
     "lodash": "registry:npm/lodash#4.0.0+20160701205107"
   },
   "globalDependencies": {
+    "core-decorators": "registry:dt/core-decorators#0.10.0+20160316155526",
     "node": "registry:dt/node#6.0.0+20160709114037"
   }
 }
