@@ -1,11 +1,13 @@
 
-declare namespace Galactic {
+/// <reference path="interfaces.d.ts" />
 
-  export interface Platform {
+declare const platform: Galactic.Platform
+declare const component: Galactic.Component
 
-  }
+type EntityFuncAnn = (name: string) => any
 
-}
-
-export const galaxy: Galactic.Platform
+declare const service: (name: string) => any
+declare const provider: (name: string) => any
+declare const entity: any | EntityFuncAnn
+declare const discover: (name: string) => any
 
