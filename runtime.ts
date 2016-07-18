@@ -46,12 +46,40 @@ export class Runtime extends EventEmitter {
     //arguments: { [pos: number]: string }
     //method: Function
   //}>>()
-  serviceListeners = new Map<string, Map<Service>>()
+  serviceListeners = new Map<string, Set<Service>>()
+  serviceInstanciationListeners = new Map<string, Set<Service>>()
+  providers = new Map<string, Set<Provider>>()
 
+  /**
+   * Notifies all service listeners that a new service became available,
+   * which could get instanciated.
+   */
   triggerServiceDiscovery(service) {
-    if (this.serviceListeners.has(service.name)) {
-      this.serviceListeners.get(service.name).forEach(listeningService => {
+    const listeners = this.serviceListeners.get(service.name)
+    if (listeners !== undefined) {
+      listeners.forEach(listeningService => {
         listeningService.triggerServiceDiscovery(service)
+      })
+    }
+  }
+
+  /**
+   * Notifies all service instanciation listeners that a service has been
+   * instanciated.
+   */
+  triggerServiceInstanciationDiscovery(service) {
+
+    const providers = this.providers.get(service.name)
+    if (providers !== undefined) {
+      providers.forEach(provider => {
+        service.registerProvider(provider)
+      })
+    }
+
+    const listeners = this.serviceInstanciationListeners.get(service.name)
+    if (listeners !== undefined) {
+      listeners.forEach(listeningService => {
+        listeningService.triggerServiceInstanciationDiscovery(service)
       })
     }
   }
@@ -60,6 +88,12 @@ export class Runtime extends EventEmitter {
     if (!this.serviceListeners.has(serviceName))
       this.serviceListeners.set(serviceName, new Set())
     this.serviceListeners.get(serviceName).add(triggerable)
+  }
+
+  addServiceInstanciationListener(serviceName: string, triggerable) {
+    if (!this.serviceInstanciationListeners.has(serviceName))
+      this.serviceInstanciationListeners.set(serviceName, new Set())
+    this.serviceInstanciationListeners.get(serviceName).add(triggerable)
   }
 
   // TODO: add constructor support
@@ -76,22 +110,29 @@ export class Runtime extends EventEmitter {
       this.addServiceListener(serviceName, service)
     })
     explorer.metadata.methods.forEach((params, key) => {
-      for (const index of Object.keys(params))
-        this.addServiceListener(params[index], service)
+      for (const index of Object.keys(params)) {
+        this.addServiceInstanciationListener(params[index], service)
+      }
     })
     this.services.set(name, service)
     this.triggerServiceDiscovery(service)
+    this.services.forEach(serviceToCheck => {
+      if (serviceToCheck.instance !== null)
+        service.triggerServiceInstanciationDiscovery(serviceToCheck)
+    })
 
     return service
   }
 
-  // FIXME: implement me correctly
-  addProvider(serviceName, target, component) {
-    if (!this.providers.hasKey(serviceName))
-      this.providers.addPair(serviceName, new Set())
-    const providers = this.providers.getValue(serviceName)
-    const provider = new Provider(serviceName, target, component)
+  addProvider(serviceName, component, explorer, args) {
+    if (!this.providers.has(serviceName))
+      this.providers.set(serviceName, new Set())
+    const providers = this.providers.get(serviceName)
+    const provider = new Provider(this, serviceName, component, explorer, args)
     providers.add(provider)
+    const service = this.services.get(serviceName)
+    if (service !== undefined && service.instance !== null)
+      service.registerProvider(provider)
     return provider
   }
 
@@ -140,8 +181,7 @@ export class Runtime extends EventEmitter {
   }
 
   getServiceInstance(name: string, component) {
-    console.log('here')
-    this.getService(name).forComponent(component)
+    return this.getService(name).forComponent(component)
   }
 
   hasService(name: string) {
@@ -152,7 +192,7 @@ export class Runtime extends EventEmitter {
     vm.runInContext(script, this.context, options)
   }
 
-  localize(componentName) {
+  localize(file, componentName) {
 
     const component = this.getComponent(componentName)
 
@@ -176,9 +216,14 @@ export class Runtime extends EventEmitter {
     , service: createServiceAnnotation(this, component)
     , discover: createDiscoverAnnotation(this, component)
     , provide: createProvideAnnotation(this, component)
-    , require: (moduleName) => require(resolve(moduleName))
+    , require: (moduleName) => {
+        if (moduleName.charAt(0) === '.')
+          return component.require(require.resolve(path.dirname(file)+'/'+moduleName))
+        else
+          return require(resolve(moduleName))
+      }
     , module: {
-        exports: {}
+        exports: component.currentModuleExports
       }
     }
     localized.require.resolve = resolve

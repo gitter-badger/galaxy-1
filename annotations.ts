@@ -1,4 +1,5 @@
 
+import * as _ from "lodash"
 import "reflect-metadata"
 import { WrapperType } from "./common"
 import { ServiceExplorer } from "./explorer"
@@ -43,10 +44,12 @@ export function createServiceAnnotation(platform, component) {
 }
 
 export function createProvideAnnotation(platform, component) {
-  return (serviceName) => {
+  return function (serviceName) {
     return (target) => {
       assertNotSpecial(target)
-      const provider = platform.addProvider(target, component, serviceName) 
+      ensureExplorerMapPresent(target)
+      const metadata = Reflect.getMetadata(KEY_DISCOVERERS, target)
+      const provider = platform.addProvider(serviceName, component, new ServiceExplorer(target, metadata), _.values(arguments).slice(1))
       Reflect.defineMetadata(KEY_SPECIALS, {
         type: WrapperType.Provider
       , object: provider

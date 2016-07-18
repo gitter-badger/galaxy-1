@@ -5,7 +5,7 @@ function newCall(Cls, args) {
   //}
   //F.prototype = cls.prototype;
   //return new F()
-  return new (Function.prototype.bind.apply(Cls, arguments));
+  return new (Function.prototype.bind.apply(Cls, args));
 }
 
 export interface ExplorerMetadata {
@@ -67,10 +67,9 @@ export class ServiceExplorer {
   createInstance(runtime, component, args) {
     if (!this.keysCreated)
       this.metadata.keys.forEach((serviceName, key) => {
-        Object.defineProperty(this.target, key, {
+        const service = runtime.getServiceInstance(serviceName, component)
+        Object.defineProperty(this.target.prototype, key, {
           get: () => {
-            const service = runtime.getServiceInstance(serviceName, component)
-            instance[key] = service
             return service
           } 
         })
