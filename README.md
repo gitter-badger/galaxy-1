@@ -67,3 +67,34 @@ class AnimalService {
 
 Want to know more? Read our [full guide](https://github.com/GalacticJS/galaxy/wiki/Services)
 which goes through all of the various features of the runtime.
+
+## API
+
+```ts
+import * as galactic from "galactic-runtime"
+```
+
+### class galactic.Runtime
+
+#### constuctor()
+
+Override the default constructor. Use this to enable components by default, or
+connect to certain services at startup.
+
+#### saveEnabledComponents()
+
+Override this method to use custom behaviour for saving enabled components,
+e.g. based on the current working directory or such.
+
+#### getServiceInstance(serviceName)
+
+Retrieve the specified service from the system. If service has not been loaded
+yet, throws an error. Also throws an error if the dependencies of the service 
+have not been met.
+
+## Galaxy in the wild
+
+Galaxy is used in [the Comet platform](http://github.com/comet-platform/comet-platform)
+to make it possible to build an extensible and feature-rich development platform and will
+be used in the upcoming [EngageJS](http://github.com/EngageJS) CMS solution.
+
