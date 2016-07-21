@@ -1,10 +1,13 @@
 
-/// <reference path="interfaces.d.ts" />
-/// <reference path="typings/index.d.ts" />
+/// <reference path="../interfaces.d.ts" />
+/// <reference path="../typings/index.d.ts" />
 
+import * as _ from "lodash"
 import * as path from "path"
 import * as fs from "fs"
 import { EventEmitter } from "events"
+
+import * as annotations from "./annotations"
 
 export class Component extends EventEmitter {
 
@@ -19,16 +22,24 @@ export class Component extends EventEmitter {
   dependencies: string[]
   exports: any
   required: boolean
+  annotations: { [name: string]: Function }
 
+  locals: { [name: string]: any }
   cached = new Map<string, Object>()
 
-  constructor(runtime: Runtime, name: string, dir: string, deps: string[], required: boolean) {
+  constructor(runtime: Galactic.Runtime, name: string, dir: string, deps: string[], required: boolean) {
     super()
     this.required = required
     this.dependencies = deps
     this.runtime = runtime
     this.name = name
     this.dir = dir
+    this.locals = _.mapValues(annotations, (createAnnotation) => {
+      return createAnnotation(this.runtime, this)
+    })
+    _.assign(this.locals, {
+      component: this
+    })
   }
 
   loadSync() {
@@ -39,37 +50,23 @@ export class Component extends EventEmitter {
   }
 
   run(file: string) {
-    this.currentModuleExports = {}
-    const res = this.runtime.runInContext(`
-  'use strict';
-var _localized = platform.localize('${file}', '${this.name}');
-(function (module, require, platform, service, entity, discover, component, autoload, local, extern, provide) {
-var exports = module.exports;\n
-${fs.readFileSync(file).toString()}
-})(_localized.module, _localized.require, _localized.runtime, _localized.service, _localized.entity, _localized.discover, _localized.component, _localized.autoload, _localized.local, _localized.export, _localized.provide)`, {
-      filename: file
-    })
-    const exports = this.currentModuleExports
-    this.currentModuleExports = null
-    return {
-      result: res
-    , exports: exports
+    const exports = {}
+    try {
+      this.runtime.vm.runClosure(fs.readFileSync(file).toString(), this.locals, {
+        filename: file
+      , exports: exports
+      })
+      return { exports: exports }
+    } catch(e) { 
+      this.runtime.emit('error', e)
     }
   }
 
-  require(file) {
-    if (!path.isAbsolute(file))
-      throw new Error(`path must be an absolute path`)
-    if (this.cached.has(file))
-      return this.cached.get(file)
-    return this.run(file).exports
-  }
-
   markAsManuallyToggled(manually) {
-    this.manuallyToggled = manually
+    this.manuallyToggled = !!manually
   }
 
-  enable(manually?) {
+  enable() {
     if (this.locked)
       throw new Error(`cannot enable a locked component`)
     if (this.enabled)

@@ -12,16 +12,7 @@ import { readJSON, resolveModule } from "./common"
 import { Service, Provider } from "./service"
 import { Component } from "./component"
 import { WrapperType } from "./common"
-
-import {
-  createServiceAnnotation
-, createAutoloadAnnotation,
-, createLocalAnnotation,
-, createPublicAnnotation,
-, createProvideAnnotation
-, createEntityAnnotation
-, createDiscoverAnnotation
-} from "./annotations"
+import { NodeVM } from "vm-plus"
 
 function packageStem(name: string) {
   return name.substring(name.indexOf('/')+1)
@@ -33,10 +24,13 @@ export class Runtime extends EventEmitter {
   name: string
   componentsDir: string
   context: Object
+  vm: VM
   required: string[]
   globalName: string
   saveEnabled: boolean
   debug: (msg: string) => any
+
+  require: NodeRequireVMPlugin
 
   components = new Map<string, Component>()
   services = new Map<string, Service>()
@@ -188,48 +182,6 @@ export class Runtime extends EventEmitter {
     return this.services.has(name)
   }
 
-  runInContext(script, options?) {
-    vm.runInContext(script, this.context, options)
-  }
-
-  localize(file, componentName) {
-
-    const component = this.getComponent(componentName)
-
-    const resolve = (moduleName) => {
-      if (typeof moduleName !== 'string')
-        throw new Error(`module path must be a string; received ${moduleName}`)
-      try {
-        return require.resolve(moduleName)
-      } catch(e) {
-        return path.resolve(component.dir+'/node_modules/'+moduleName)
-      }
-    }
-
-    const localized = {
-      runtime: this
-    , component: component
-    , autoload: createAutoloadAnnotation(this, component)
-    , local: createLocalAnnotation(this, component)
-    , public: createPublicAnnotation(this, component)
-    , entity: createEntityAnnotation(this, component)
-    , service: createServiceAnnotation(this, component)
-    , discover: createDiscoverAnnotation(this, component)
-    , provide: createProvideAnnotation(this, component)
-    , require: (moduleName) => {
-        if (moduleName.charAt(0) === '.')
-          return component.require(require.resolve(path.dirname(file)+'/'+moduleName))
-        else
-          return require(resolve(moduleName))
-      }
-    , module: {
-        exports: component.currentModuleExports
-      }
-    }
-    localized.require.resolve = resolve
-    return localized
-  }
-
   /**
    * Fetches only those components that have been manually enabled,
    * i.e. the user typed the name in a terminal or clicked on it in
@@ -266,18 +218,17 @@ export class Runtime extends EventEmitter {
     this.required = options.required
     this.saveEnabled = options.saveEnabled === undefined ? false : options.saveEnabled
 
-    this.context = {
-      Promise: Promise
-    , Symbol: Symbol
-    , require: require
-    , console: console
-    , platform: this
-    }
-
-    vm.createContext(this.context)
-
+    this.vm = new NodeVM({
+      context: {
+        platform: this
+      }
+    })
+    this.vm.on('error', e => {
+      console.log(e.stack)
+      this.emit('error', e)
+    })
+  
     this.debug = createDebug(options.name)
-    this.runInContext(`require('source-map-support').install()`)
 
     this.importComponentsSync(options.componentsDir)
 

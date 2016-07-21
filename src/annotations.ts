@@ -4,8 +4,8 @@ import "reflect-metadata"
 import { WrapperType } from "./common"
 import { ServiceExplorer } from "./explorer"
 
-export const KEY_DISCOVERERS = Symbol.for('exploring properties')
-export const KEY_SPECIALS = Symbol.for('wrapper meta-information')
+const KEY_DISCOVERERS = Symbol.for('exploring properties')
+const KEY_SPECIALS = Symbol.for('wrapper meta-information')
 
 function assertNotSpecial(target) {
   if (Reflect.hasMetadata(KEY_SPECIALS, target)) {
@@ -28,28 +28,30 @@ function assertSpecial(target) {
     throw new Error(`target must be marked either as a service, provider, or entity`)
 }
 
-export function createServiceAnnotation(platform, component) {
+export function service(platform, component) {
   return (name) => {
     return (target) => {
       assertNotSpecial(target)
       ensureExplorerMapPresent(target)
       const metadata = Reflect.getMetadata(KEY_DISCOVERERS, target)
-      const service = platform.addService(name, component, new ServiceExplorer(target, metadata))
+      const newService = platform.addService(name, component,
+              new ServiceExplorer(target, metadata))
       Reflect.defineMetadata(KEY_SPECIALS, {
         type: WrapperType.Service
-      , object: service
+      , object: newService
       }, target)
     }
   }
 }
 
-export function createProvideAnnotation(platform, component) {
+export function provide(platform, component) {
   return function (serviceName) {
     return (target) => {
       assertNotSpecial(target)
       ensureExplorerMapPresent(target)
       const metadata = Reflect.getMetadata(KEY_DISCOVERERS, target)
-      const provider = platform.addProvider(serviceName, component, new ServiceExplorer(target, metadata), _.values(arguments).slice(1))
+      const provider = platform.addProvider(serviceName, component,
+          new ServiceExplorer(target, metadata), _.values(arguments).slice(1))
       Reflect.defineMetadata(KEY_SPECIALS, {
         type: WrapperType.Provider
       , object: provider
@@ -58,12 +60,13 @@ export function createProvideAnnotation(platform, component) {
   }
 }
 
-export function createEntityAnnotation(platform, component) {
+export function entity(platform, component) {
   function createEntity(target, name?) {
     assertNotSpecial(target)
     ensureExplorerMapPresent(target)
     const metadata = Reflect.getMetadata(KEY_DISCOVERERS, target)
-    const entity = platform.addEntity(component, new ServiceExplorer(target, metadata), name)
+    const entity = platform.addEntity(component,
+          new ServiceExplorer(target, metadata), name)
     Reflect.defineMetadata(KEY_SPECIALS, {
       type: WrapperType.Service
     , object: entity
@@ -87,7 +90,7 @@ function ensureExplorerMapPresent(target) {
     }, target)
 }
 
-export function createDiscoverAnnotation(platform, component) {
+export function discover(platform, component) {
   return (name) => {
     return (target, key, index) => {
       ensureExplorerMapPresent(target.constructor)
@@ -104,7 +107,7 @@ export function createDiscoverAnnotation(platform, component) {
   }
 }
 
-export function createAutoloadAnnotation(platform, component) {
+export function autoload(platform, component) {
   return (target) => {
     assertSpecial(target)
     const wrapper = Reflect.getMetadata(KEY_SPECIALS, target)
@@ -112,7 +115,7 @@ export function createAutoloadAnnotation(platform, component) {
   }
 }
 
-export function createLocalAnnotation(platform, component) {
+export function local(platform, component) {
   return (target) => {
     console.log('localizing')
     assertSpecial(target)
@@ -121,7 +124,7 @@ export function createLocalAnnotation(platform, component) {
   }
 }
 
-export function createPublicAnnotation(platform, component) {
+export function extern(platform, component) {
   return (target) => {
     console.log('publicizing')
     assertSpecial(target)
