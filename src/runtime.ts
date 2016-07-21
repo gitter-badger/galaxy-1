@@ -1,5 +1,6 @@
 
-/// <reference path="typings/index.d.ts" />
+/// <reference path="../interfaces.d.ts" />
+/// <reference path="../typings/index.d.ts" />
 
 import * as vm from "vm"
 import * as _ from "lodash"
@@ -18,19 +19,15 @@ function packageStem(name: string) {
   return name.substring(name.indexOf('/')+1)
 }
 
-
 export class Runtime extends EventEmitter {
 
   name: string
   componentsDir: string
   context: Object
-  vm: VM
+  vm: NodeVM
   required: string[]
   globalName: string
-  saveEnabled: boolean
   debug: (msg: string) => any
-
-  require: NodeRequireVMPlugin
 
   components = new Map<string, Component>()
   services = new Map<string, Service>()
@@ -182,29 +179,33 @@ export class Runtime extends EventEmitter {
     return this.services.has(name)
   }
 
-  /**
-   * Fetches only those components that have been manually enabled,
-   * i.e. the user typed the name in a terminal or clicked on it in
-   * a web interface.
-   */
-  // FIXME: I must exclude indirect dependencies
-  getManuallyEnabledComponents() {
-    const enabled = []
-    for (const pair of this.components) {
-      const component = pair.value
-      if (component.enabled)
-        enabled.push(component.name)
+  loadEnabledComponents() {
+    if (fs.existsSync(this.componentsDir+'/enabled.json')) {
+      _.forEach(JSON.parse(fs.readFileSync(this.componentsDir+'/enabled.json').toString()), name => {
+        this.getComponent(name).enable()
+      })
     }
-    return enabled
+  }
+
+  getManuallyEnabledComponents() {
+    const components = []
+    this.components.forEach(component => {
+      if (component.enabled && component.manuallyToggled)
+        components.push(component)
+    })
+    return components
   }
 
   saveEnabledComponents() {
-    if (this.saveEnabled === true) {
-      fs.writeFile(this.componentsDir+'/enabled.json', this.getManuallyEnabledComponents())
-    }
+    fs.writeFile(this.componentsDir+'/enabled.json', this.getManuallyEnabledComponents()
+                 .map(component => component.name))
   }
 
-  constructor(options) {
+  constructor(options: {
+    name: string
+    componentsDir: string
+    required?: string[]
+  }) {
 
     super()
 
@@ -215,7 +216,7 @@ export class Runtime extends EventEmitter {
 
     this.name = options.name
     this.componentsDir = options.componentsDir
-    this.required = options.required
+    this.required = options.required || []
     this.saveEnabled = options.saveEnabled === undefined ? false : options.saveEnabled
 
     this.vm = new NodeVM({
@@ -231,10 +232,6 @@ export class Runtime extends EventEmitter {
     this.debug = createDebug(options.name)
 
     this.importComponentsSync(options.componentsDir)
-
-    _.forEach(readJSON(this.componentsDir+'/enabled.json', []), name => {
-      this.getComponent(name).enable()
-    })
   }
 
   importComponentsSync(dir: string) {
