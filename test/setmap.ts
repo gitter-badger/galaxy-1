@@ -13,7 +13,7 @@ describe('a set map', () => {
     expect(setmap.has([])).to.be.false
   })
   
-  it('only reports setted values to be there', () => {
+  it('only reports set values to be there', () => {
     const setmap = new SetMap()
     setmap.set(['one','two'], 'someval')
     expect(setmap.has(['one','two'])).to.be.true
@@ -26,7 +26,7 @@ describe('a set map', () => {
     expect(setmap.has(['another','set'])).to.be.false
   })
 
-  it('is able have values seted and reports them to be present', () => {
+  it('is able have values set and reports them to be present', () => {
     const setmap = new SetMap()
     setmap.set(['one','two'], 'someval')
     expect(setmap.has(['one','two'])).to.be.true
@@ -46,8 +46,22 @@ describe('a set map', () => {
     expect(setmap.get(['one','two','three'])).to.equal('foobar')
     setmap.set([], 'anotherval')
     expect(setmap.get([])).to.equal('anotherval')
-
   })
-  
+
+  it('is able to remove nonexistent values without error', () => {
+    const setmap = new SetMap()
+    setmap.delete(['one', 'two'])
+    setmap.delete(['one', 'two', 'tree'])
+    setmap.delete([])
+  })
+
+  it('is able to delete existing values', () => {
+    const setmap = new SetMap()
+    setmap.set(['one','two'], 'someval')
+    expect(setmap.has(['one','two'])).to.be.true
+    setmap.delete(['one','two'])
+    expect(setmap.has(['one','two'])).to.be.false
+  })
+
 })
 
