@@ -74,10 +74,10 @@ class Harbor {
 }
 ```
 
-Services can be extended from within the own component or other components. To
-get a feel of how this works, consider the following example, where instead
-of directly depending on the logger-class, we instead provide an extension that
-hooks into the logger class:
+Services can be extended from within the component which defined the service or
+from other components. To get a feel of how this works, consider the following
+example, where instead of directly depending on the logger-class, we provide an
+extension that hooks into the logger class:
 
 ```ts
 @extension
