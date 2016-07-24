@@ -52,9 +52,6 @@ From now on, the new service can be used by any other service anywhere in your
 application. For example:
 
 ```ts
-// interfaces; download this to your component
-/// <reference path="logger.d.ts" />
-
 @service("harbor")
 class Harbor {
 
