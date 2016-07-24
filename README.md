@@ -36,6 +36,7 @@ application, as follows:
 ```ts
 @service("logger")
 class LoggerService {
+
   log(msg: string) {
     console.log(`A message: ${msg}`)
   }
@@ -43,54 +44,68 @@ class LoggerService {
   constructor() {
     console.log('Logger service initialized!')
   }
+
 }
 ```
 
-From now on, the new service can be used by other services and anywhere in your application. For example:
+From now on, the new service can be used by any other service anywhere in your
+application. For example:
 
 ```ts
 // interfaces; download this to your component
 /// <reference path="logger.d.ts" />
 
-@service("animal")
-class AnimalService {
+@service("harbor")
+class Harbor {
 
   @discover("logger")
   logger: LoggerService
-  
-  eat(food) {
-    this.logger.log('Yum yum. I ate a ${food.name}.')
+
+  boats = []
+
+  enter(boat: Boat) {
+    this.logger.log('welcome, ${boat.name}')
+    this.boats.push(boat)
   }
 
+  leave(boat: Boat) {
+    this.logger.log('boat ${boat.name} left the harbor')
+    _.pull(this.boats, boat)
+  }
+
+
+}
+```
+
+Services can be extended from within the own component or other components. To
+get a feel of how this works, consider the following example, where instead
+of directly depending on the logger-class, we instead provide an extension that
+hooks into the logger class:
+
+```ts
+@extension
+class HarborLoggerExtension {
+
+  @discover("harbor")
+  harbor
+
+  @discover("logger")
+  logger
+
+  constructor() {
+    harbor.on('boat enter', () => {
+      this.logger.log('welcome, ${boat.name}')
+    })
+    harbor.on('boat leave', () => {
+      this.logger.log('boat ${boat.name} left the harbor')
+    })
+  }
+  
 }
 ```
 
 Want to know more? Read our [full guide](https://github.com/GalacticJS/galaxy/wiki/Services)
 which goes through all of the various features of the runtime.
-
-## API
-
-```ts
-import * as galactic from "galactic-runtime"
-```
-
-### class galactic.Runtime
-
-#### constuctor()
-
-Override the default constructor. Use this to enable components by default, or
-connect to certain services at startup.
-
-#### saveEnabledComponents()
-
-Override this method to use custom behaviour for saving enabled components,
-e.g. based on the current working directory or such.
-
-#### getServiceInstance(serviceName)
-
-Retrieve the specified service from the system. If service has not been loaded
-yet, throws an error. Also throws an error if the dependencies of the service 
-have not been met.
 
 ## Galaxy in the wild
 
