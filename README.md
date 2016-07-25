@@ -1,6 +1,8 @@
 Galaxy
 ======
 
+[![Join the chat at https://gitter.im/GalacticJS/galaxy](https://badges.gitter.im/GalacticJS/galaxy.svg)](https://gitter.im/GalacticJS/galaxy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 > A runtime for large JavaScript applications
 
 :warning: This platform is still in its incubation phase
